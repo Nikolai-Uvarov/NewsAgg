@@ -1,6 +1,8 @@
 package main
 
 import (
+	"NewsAgg/pkg/db/dbmock"
+	"NewsAgg/pkg/db/obj"
 	"NewsAgg/pkg/rss"
 	"fmt"
 	"time"
@@ -8,6 +10,8 @@ import (
 
 func main() {
 	c := rss.Listen("https://habr.com/ru/rss/best/daily/?fl=ru", time.Minute)
+
+	db := dbmock.New()
 
 	var stop chan int
 
@@ -21,14 +25,23 @@ func main() {
 		}
 	}()
 
+	var dbp obj.Post
+
 loop:
-	for {
+	for i := 0; i < 10; i++ {
 		select {
 		case p := <-c:
-			fmt.Println(p.ID, p.Title)
+			dbp = obj.RssToObjConvert(p)
+			db.SavePost(dbp)
 		case <-stop:
 			break loop
 		}
+	}
+
+	posts := db.GetTopPosts(10)
+
+	for _, p := range posts {
+		fmt.Println(p.ID, p.Title, p.PubTime)
 	}
 
 }
