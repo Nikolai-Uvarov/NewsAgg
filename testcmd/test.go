@@ -9,7 +9,13 @@ import (
 )
 
 func main() {
-	c := rss.Listen("https://habr.com/ru/rss/best/daily/?fl=ru", time.Minute)
+
+	a := rss.Listen("http://www.kommersant.ru/RSS/news.xml", time.Minute)
+	b := rss.Listen("https://habr.com/ru/rss/best/daily/?fl=ru", time.Minute)
+	d := rss.Listen("https://tass.ru/rss/v2.xml", time.Minute)
+	e := rss.Listen("http://www.polit.ru/rss/index.xml", time.Minute)
+
+	c := rss.RSSMultiplex(b, a, e, d)
 
 	db := dbmock.New()
 
@@ -27,8 +33,9 @@ func main() {
 
 	var dbp obj.Post
 
+	start := time.Now()
 loop:
-	for i := 0; i < 10; i++ {
+	for time.Since(start) < time.Minute {
 		select {
 		case p := <-c:
 			dbp = obj.RssToObjConvert(p)
@@ -41,7 +48,7 @@ loop:
 	posts := db.GetTopPosts(10)
 
 	for _, p := range posts {
-		fmt.Println(p.ID, p.Title, p.PubTime)
+		fmt.Println(p.ID, p.Title, p.PubTime, p.Link)
 	}
 
 }
