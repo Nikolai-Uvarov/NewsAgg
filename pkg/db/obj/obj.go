@@ -14,5 +14,5 @@ type Post struct {
 
 type DB interface {
 	SavePost(Post)
-	GetTopPosts(int)
+	GetTopPosts(int) []Post
 }

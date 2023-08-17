@@ -1,0 +1,9 @@
+{
+    "rss":[
+        "http://www.kommersant.ru/RSS/news.xml",
+        "https://habr.com/ru/rss/best/daily/?fl=ru", 
+        "https://tass.ru/rss/v2.xml", 
+        "http://www.polit.ru/rss/index.xml" 
+    ],
+    "request_period": 5
+ }

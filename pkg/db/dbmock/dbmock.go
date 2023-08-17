@@ -26,3 +26,7 @@ func (db *DB) GetTopPosts(n int) []obj.Post {
 	sort.Slice(db.posts, func(i, j int) bool { return db.posts[i].PubTime > db.posts[j].PubTime })
 	return db.posts[:n]
 }
+
+func (db *DB) Len() int {
+	return len(db.posts)
+}

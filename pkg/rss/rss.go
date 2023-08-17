@@ -55,6 +55,8 @@ func Listen(url string, period time.Duration) <-chan Post {
 		}
 
 		for {
+			time.Sleep(period)
+
 			//запросить обновление RSS
 			err := f.Update()
 			if err != nil {
@@ -80,8 +82,6 @@ func Listen(url string, period time.Duration) <-chan Post {
 				}
 
 			}
-
-			time.Sleep(period)
 		}
 	}()
 
@@ -91,7 +91,7 @@ func Listen(url string, period time.Duration) <-chan Post {
 // Формирует объект Post, забирая из Item нужные поля
 func itemToPost(i *rss.Item) (p Post) {
 	p.ID = i.ID
-	p.Content = i.Content
+	p.Content = i.Summary
 	p.Link = i.Link
 	p.PubTime = i.Date.Unix()
 	p.Title = i.Title
@@ -134,8 +134,27 @@ func RSSMultiplex(channels ...<-chan Post) <-chan Post {
 }
 
 // обработчик rss-канала, сохраняющий посты в базу
-func Collect(db *obj.DB) {
+func Collect(db obj.DB) {
+
 	ttu, urls := readConfig()
+
+	var cs []<-chan Post
+
+	//запуск прослушивания rss лент
+	for _, u := range urls {
+		cs = append(cs, Listen(u, time.Minute*time.Duration(ttu)))
+	}
+
+	//мультиплексирование всех прослушиваемых лент в 1 канал
+	c := RSSMultiplex(cs...)
+
+	//сохранение постов в БД
+	go func() {
+		for p := range c {
+			dbp := RssToObjConvert(p)
+			db.SavePost(dbp)
+		}
+	}()
 
 }
 
