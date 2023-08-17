@@ -38,7 +38,7 @@ loop:
 	for time.Since(start) < time.Minute {
 		select {
 		case p := <-c:
-			dbp = obj.RssToObjConvert(p)
+			dbp = rss.RssToObjConvert(p)
 			db.SavePost(dbp)
 		case <-stop:
 			break loop
