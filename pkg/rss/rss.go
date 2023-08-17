@@ -5,7 +5,10 @@
 package rss
 
 import (
+	"encoding/json"
+	"io"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -13,6 +16,16 @@ import (
 
 	"github.com/SlyMarbo/rss"
 )
+
+var config = "config.json"
+
+// для переопределения минимального интервала обновления rss ленты
+// при попытке обновить rss ленту с меньшим интервалом, чем DefaultRefreshInterval, SlyMarbo/rss генерит ошибку
+var minRefreshInterval = time.Second * 30
+
+func init() {
+	rss.DefaultRefreshInterval = minRefreshInterval
+}
 
 type Post struct {
 	ID      string // номер записи
@@ -24,8 +37,6 @@ type Post struct {
 
 func Listen(url string, period time.Duration) <-chan Post {
 	c := make(chan Post)
-
-	rss.DefaultRefreshInterval = time.Second * 30
 
 	go func() {
 		defer close(c)
@@ -120,4 +131,36 @@ func RSSMultiplex(channels ...<-chan Post) <-chan Post {
 		close(multiplexedChan)
 	}()
 	return multiplexedChan
+}
+
+// обработчик rss-канала, сохраняющий посты в базу
+func Collect(db *obj.DB) {
+	ttu, urls := readConfig()
+
+}
+
+// возвращает массив строк с адресами rss лент и частоту обновления из config
+func readConfig() (int, []string) {
+	f, err := os.OpenFile(config, os.O_RDONLY, 0777)
+	if err != nil {
+		log.Fatal("Cannot read config file: ", err)
+	}
+	defer f.Close()
+
+	buf, err := io.ReadAll(f)
+	if err != nil {
+		log.Fatal("Cannot read config file: ", err)
+	}
+
+	conf := struct {
+		Rss            []string
+		Request_period int
+	}{}
+
+	err = json.Unmarshal(buf, &conf)
+	if err != nil {
+		log.Fatal("Cannot parse config: ", err)
+	}
+
+	return conf.Request_period, conf.Rss
 }
