@@ -1,3 +1,4 @@
+// Пакет in-mem database для разработки и тестов
 package dbmock
 
 import (
