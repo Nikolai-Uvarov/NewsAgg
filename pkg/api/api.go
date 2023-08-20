@@ -57,7 +57,11 @@ func (api *API) posts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Получение данных из БД.
-	posts := api.db.GetTopPosts(n)
+	posts, err := api.db.GetTopPosts(n)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	// Отправка данных клиенту в формате JSON.
 	json.NewEncoder(w).Encode(posts)
 	// Отправка клиенту статуса успешного выполнения запроса

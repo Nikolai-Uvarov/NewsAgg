@@ -13,6 +13,6 @@ type Post struct {
 }
 
 type DB interface {
-	SavePost(Post)
-	GetTopPosts(int) []Post
+	SavePost(Post) error
+	GetTopPosts(int) ([]Post, error)
 }

@@ -2,7 +2,8 @@ package main
 
 import (
 	"NewsAgg/pkg/api"
-	"NewsAgg/pkg/db/dbmock"
+	//"NewsAgg/pkg/db/dbmock"
+	"NewsAgg/pkg/db/postgres"
 	"NewsAgg/pkg/rss"
 	"log"
 	"net/http"
@@ -10,8 +11,9 @@ import (
 
 func main() {
 
-	// Инициализация БД в памяти.
-	db := dbmock.New()
+	// Инициализация БД
+	//db := dbmock.New()
+	db := postgres.New()
 
 	//Запуск воркера, прослушивающего и сохраняющего в БД RSS-ленты
 	rss.Collect(db)

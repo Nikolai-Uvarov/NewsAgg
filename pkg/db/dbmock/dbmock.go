@@ -17,15 +17,16 @@ func New() *DB {
 	return db
 }
 
-func (db *DB) SavePost(p obj.Post) {
+func (db *DB) SavePost(p obj.Post) error {
 	p.ID = db.nextid
 	db.posts = append(db.posts, p)
 	db.nextid++
+	return nil
 }
 
-func (db *DB) GetTopPosts(n int) []obj.Post {
+func (db *DB) GetTopPosts(n int) ([]obj.Post, error) {
 	sort.Slice(db.posts, func(i, j int) bool { return db.posts[i].PubTime > db.posts[j].PubTime })
-	return db.posts[:n]
+	return db.posts[:n], nil
 }
 
 func (db *DB) Len() int {

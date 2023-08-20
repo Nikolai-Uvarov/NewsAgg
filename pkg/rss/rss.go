@@ -152,7 +152,10 @@ func Collect(db obj.DB) {
 	go func() {
 		for p := range c {
 			dbp := RssToObjConvert(p)
-			db.SavePost(dbp)
+			err := db.SavePost(dbp)
+			if err != nil {
+				log.Printf("Error saving post to db: %v", err)
+			}
 		}
 	}()
 
