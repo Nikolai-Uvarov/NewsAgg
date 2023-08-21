@@ -35,6 +35,7 @@ type Post struct {
 	Link    string // ссылка на источник
 }
 
+// Слушает 1 rss поток и отдет обновления в канал
 func Listen(url string, period time.Duration) <-chan Post {
 	c := make(chan Post)
 
@@ -133,7 +134,7 @@ func RSSMultiplex(channels ...<-chan Post) <-chan Post {
 	return multiplexedChan
 }
 
-// обработчик rss-канала, сохраняющий посты в базу
+// обработчик rss-каналов, сохраняющий посты в базу
 func Collect(db obj.DB) {
 
 	ttu, urls := readConfig()

@@ -19,6 +19,7 @@ func init() {
 
 }
 
+// создает новое подключение к БД
 func New() *DB {
 	db := new(DB)
 	db.ctx = context.Background()
@@ -34,6 +35,7 @@ func New() *DB {
 	return db
 }
 
+// Сохраняет пост, представленный объектом obj.Post, в БД
 func (db *DB) SavePost(p obj.Post) error {
 
 	_, err := db.DB.Exec(db.ctx,
@@ -48,6 +50,7 @@ func (db *DB) SavePost(p obj.Post) error {
 	return nil
 }
 
+// Возвращает n новейших по дате создания постов из БД
 func (db *DB) GetTopPosts(n int) ([]obj.Post, error) {
 	rows, err := db.DB.Query(db.ctx, `SELECT * FROM news ORDER BY pubtime DESC LIMIT ($1);`, n)
 
