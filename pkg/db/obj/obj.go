@@ -15,4 +15,5 @@ type Post struct {
 type DB interface {
 	SavePost(Post) error
 	GetTopPosts(int) ([]Post, error)
+	GetPostByID(int) (Post, error)
 }

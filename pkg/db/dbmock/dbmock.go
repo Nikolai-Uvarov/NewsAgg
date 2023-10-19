@@ -3,6 +3,7 @@ package dbmock
 
 import (
 	"NewsAgg/pkg/db/obj"
+	"fmt"
 	"sort"
 )
 
@@ -35,4 +36,13 @@ func (db *DB) GetTopPosts(n int) ([]obj.Post, error) {
 // Возвращает количество постов, сохраненных в  момент вызова в БД (для тестов)
 func (db *DB) Len() int {
 	return len(db.posts)
+}
+
+// Возвращает пост из БД по его ID
+func (db *DB) GetPostByID(id int) (obj.Post, error) {
+
+	if id > len(db.posts){
+		return obj.Post{}, fmt.Errorf("id not found: id = %v", id)
+	}
+	return db.posts[id-1], nil
 }

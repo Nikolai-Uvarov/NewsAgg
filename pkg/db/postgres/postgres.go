@@ -79,3 +79,33 @@ func (db *DB) GetTopPosts(n int) ([]obj.Post, error) {
 	// проверить rows.Err()
 	return posts, rows.Err()
 }
+
+// Возвращает пост из БД по его ID
+func (db *DB) GetPostByID(id int) (obj.Post, error) {
+	rows, err := db.DB.Query(db.ctx, `SELECT * FROM news WHERE id=($1);`, id)
+
+	if err != nil {
+		return obj.Post{}, err
+	}
+
+	var posts []obj.Post
+
+	for rows.Next() {
+		var post obj.Post
+
+		err = rows.Scan(
+			&post.ID,
+			&post.Title,
+			&post.Content,
+			&post.PubTime,
+			&post.Link)
+
+		if err != nil {
+			return obj.Post{}, err
+		}
+
+		posts = append(posts, post)
+	}
+	// проверить rows.Err()
+	return posts[0], rows.Err()
+}
