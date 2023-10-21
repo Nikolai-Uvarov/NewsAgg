@@ -34,10 +34,8 @@ func (api *API) Router() *mux.Router {
 func (api *API) endpoints() {
 	// получить n последних новостей
 	api.r.HandleFunc("/news/{n}", api.posts).Methods(http.MethodGet, http.MethodOptions)
-	// получить новость по postID
-	api.r.HandleFunc("/news", api.postByID).Methods(http.MethodGet, http.MethodOptions)
-	// получить найти новости по строке в заголовке
-	api.r.HandleFunc("/search", api.searchPost).Methods(http.MethodGet, http.MethodOptions)
+	// получить новость по postID, строке search, в том числе с указанием страницы
+	api.r.HandleFunc("/news", api.postWithFilters).Methods(http.MethodGet, http.MethodOptions)
 	// веб-приложение
 	api.r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./webapp"))))
 	//заголовок ответа
@@ -74,31 +72,34 @@ func (api *API) posts(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// postByID возвращает пост по id
-func (api *API) postByID(w http.ResponseWriter, r *http.Request) {
+// postByID возвращает пост по postID
+// при указании параметра search возвращает посты по вхождению строки в заголовке
+// page - номер возвращаемой страницы 
+func (api *API) postWithFilters(w http.ResponseWriter, r *http.Request) {
+	
 	// Считывание параметра  строки запроса.
 	idParam := r.URL.Query().Get("postID")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if idParam!=""{
+		id, err := strconv.Atoi(idParam)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// Получение данных из БД.
+		post, err := api.db.GetPostByID(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		// Отправка данных клиенту в формате JSON.
+		json.NewEncoder(w).Encode(post)
+		// Отправка клиенту статуса успешного выполнения запроса
+		w.WriteHeader(http.StatusOK)
 		return
 	}
-	// Получение данных из БД.
-	post, err := api.db.GetPostByID(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// Отправка данных клиенту в формате JSON.
-	json.NewEncoder(w).Encode(post)
-	// Отправка клиенту статуса успешного выполнения запроса
-	w.WriteHeader(http.StatusOK)
-}
 
-// searchPost возвращает посты по вхождению строки в заголовке
-func (api *API) searchPost(w http.ResponseWriter, r *http.Request) {
 	// Считывание параметра  строки запроса.
-	str := r.URL.Query().Get("string")
+	str := r.URL.Query().Get("search")
 
 	// Получение данных из БД.
 	posts, err := api.db.SearchPost(str)
@@ -111,3 +112,4 @@ func (api *API) searchPost(w http.ResponseWriter, r *http.Request) {
 	// Отправка клиенту статуса успешного выполнения запроса
 	w.WriteHeader(http.StatusOK)
 }
+
