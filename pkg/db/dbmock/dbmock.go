@@ -46,3 +46,7 @@ func (db *DB) GetPostByID(id int) (obj.Post, error) {
 	}
 	return db.posts[id-1], nil
 }
+
+func (db *DB) SearchPost(str string) ([]obj.Post, error) {
+	return db.posts[:1],nil
+}

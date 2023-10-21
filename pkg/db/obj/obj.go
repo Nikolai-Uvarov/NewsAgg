@@ -16,4 +16,5 @@ type DB interface {
 	SavePost(Post) error
 	GetTopPosts(int) ([]Post, error)
 	GetPostByID(int) (Post, error)
+	SearchPost(string) ([]Post, error)
 }

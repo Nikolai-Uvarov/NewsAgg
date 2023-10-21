@@ -34,8 +34,10 @@ func (api *API) Router() *mux.Router {
 func (api *API) endpoints() {
 	// получить n последних новостей
 	api.r.HandleFunc("/news/{n}", api.posts).Methods(http.MethodGet, http.MethodOptions)
-	// получить n последних новостей
+	// получить новость по postID
 	api.r.HandleFunc("/news", api.postByID).Methods(http.MethodGet, http.MethodOptions)
+	// получить найти новости по строке в заголовке
+	api.r.HandleFunc("/search", api.searchPost).Methods(http.MethodGet, http.MethodOptions)
 	// веб-приложение
 	api.r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./webapp"))))
 	//заголовок ответа
@@ -89,6 +91,23 @@ func (api *API) postByID(w http.ResponseWriter, r *http.Request) {
 	}
 	// Отправка данных клиенту в формате JSON.
 	json.NewEncoder(w).Encode(post)
+	// Отправка клиенту статуса успешного выполнения запроса
+	w.WriteHeader(http.StatusOK)
+}
+
+// searchPost возвращает посты по вхождению строки в заголовке
+func (api *API) searchPost(w http.ResponseWriter, r *http.Request) {
+	// Считывание параметра  строки запроса.
+	str := r.URL.Query().Get("string")
+
+	// Получение данных из БД.
+	posts, err := api.db.SearchPost(str)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Отправка данных клиенту в формате JSON.
+	json.NewEncoder(w).Encode(posts)
 	// Отправка клиенту статуса успешного выполнения запроса
 	w.WriteHeader(http.StatusOK)
 }

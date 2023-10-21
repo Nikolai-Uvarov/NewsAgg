@@ -109,3 +109,36 @@ func (db *DB) GetPostByID(id int) (obj.Post, error) {
 	// проверить rows.Err()
 	return posts[0], rows.Err()
 }
+
+
+func (db *DB) SearchPost(str string) ([]obj.Post, error) {
+	
+	str = "%"+str+"%"
+	
+	rows, err := db.DB.Query(db.ctx, `SELECT * FROM news WHERE title ILIKE ($1);`, str)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var posts []obj.Post
+
+	for rows.Next() {
+		var post obj.Post
+
+		err = rows.Scan(
+			&post.ID,
+			&post.Title,
+			&post.Content,
+			&post.PubTime,
+			&post.Link)
+
+		if err != nil {
+			return nil, err
+		}
+
+		posts = append(posts, post)
+	}
+	// проверить rows.Err()
+	return posts, rows.Err()
+}
