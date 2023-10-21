@@ -47,6 +47,10 @@ func (db *DB) GetPostByID(id int) (obj.Post, error) {
 	return db.posts[id-1], nil
 }
 
-func (db *DB) SearchPost(str string, p int) ([]obj.Post, error) {
-	return db.posts[:1],nil
+func (db *DB) SearchPost(str string, p int) ([]obj.Post,*obj.Pagination, error) {
+	return db.posts[:1], &obj.Pagination{
+		Page: p,
+		Of:   p,
+		PostsPerPage:  obj.PostsPerPage,
+	},nil
 }

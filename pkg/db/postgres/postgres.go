@@ -5,6 +5,7 @@ import (
 	"NewsAgg/pkg/db/obj"
 	"context"
 	"log"
+	"math"
 	"os"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -110,12 +111,40 @@ func (db *DB) GetPostByID(id int) (obj.Post, error) {
 	return posts[0], rows.Err()
 }
 
+func (db *DB) SearchPost(str string, p int) ([]obj.Post, *obj.Pagination, error) {
 
-func (db *DB) SearchPost(str string, p int) ([]obj.Post, error) {
-	
-	str = "%"+str+"%"
-	
-	rows, err := db.DB.Query(db.ctx, 
+	str = "%" + str + "%"
+
+	//считаем количество страниц
+	rows, err := db.DB.Query(db.ctx,
+		`SELECT count(*) from news 
+		WHERE title ILIKE ($1);`,
+		str)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var pag = obj.Pagination{
+		Page: p,
+		Of:   0,
+		PostsPerPage:  obj.PostsPerPage,
+	}
+
+	for rows.Next() {
+		var count int
+
+		err = rows.Scan(
+			&count)
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		pag.Of = count/obj.PostsPerPage + int(math.Pow(float64(count%obj.PostsPerPage),0))
+	}
+
+	rows, err = db.DB.Query(db.ctx,
 		`SELECT * from news 
 		WHERE title ILIKE ($1)  
 		ORDER BY pubtime DESC 
@@ -123,7 +152,7 @@ func (db *DB) SearchPost(str string, p int) ([]obj.Post, error) {
 		str, (p-1)*obj.PostsPerPage, obj.PostsPerPage)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var posts []obj.Post
@@ -139,11 +168,11 @@ func (db *DB) SearchPost(str string, p int) ([]obj.Post, error) {
 			&post.Link)
 
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		posts = append(posts, post)
 	}
 	// проверить rows.Err()
-	return posts, rows.Err()
+	return posts, &pag, rows.Err()
 }

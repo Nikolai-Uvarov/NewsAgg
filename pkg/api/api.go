@@ -119,13 +119,17 @@ func (api *API) postWithFilters(w http.ResponseWriter, r *http.Request) {
 	str := r.URL.Query().Get("search")
 
 	// Получение данных из БД.
-	posts, err := api.db.SearchPost(str,page)
+	posts, pag, err := api.db.SearchPost(str,page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	var a = obj.Answer{
+		Posts: posts,
+		Pagination:     *pag,
+	}
 	// Отправка данных клиенту в формате JSON.
-	json.NewEncoder(w).Encode(posts)
+	json.NewEncoder(w).Encode(a)
 	// Отправка клиенту статуса успешного выполнения запроса
 	w.WriteHeader(http.StatusOK)
 }
