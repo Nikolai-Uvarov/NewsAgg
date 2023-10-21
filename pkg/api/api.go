@@ -98,11 +98,28 @@ func (api *API) postWithFilters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Если нет page - в переменной будет пустая строка
+	pageParam := r.URL.Query().Get("page")
+
+	var page int
+	var err error
+
+	if pageParam != "" {
+		page, err = strconv.Atoi(pageParam)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else {
+		page = 1
+	}
+
 	// Считывание параметра  строки запроса.
 	str := r.URL.Query().Get("search")
 
 	// Получение данных из БД.
-	posts, err := api.db.SearchPost(str)
+	posts, err := api.db.SearchPost(str,page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

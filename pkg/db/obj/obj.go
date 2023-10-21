@@ -16,5 +16,8 @@ type DB interface {
 	SavePost(Post) error
 	GetTopPosts(int) ([]Post, error)
 	GetPostByID(int) (Post, error)
-	SearchPost(string) ([]Post, error)
+	SearchPost(string, int) ([]Post, error)
 }
+
+//параметр пагинации - количество постов на страницу
+const PostsPerPage = 15

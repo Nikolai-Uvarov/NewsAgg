@@ -111,11 +111,16 @@ func (db *DB) GetPostByID(id int) (obj.Post, error) {
 }
 
 
-func (db *DB) SearchPost(str string) ([]obj.Post, error) {
+func (db *DB) SearchPost(str string, p int) ([]obj.Post, error) {
 	
 	str = "%"+str+"%"
 	
-	rows, err := db.DB.Query(db.ctx, `SELECT * FROM news WHERE title ILIKE ($1);`, str)
+	rows, err := db.DB.Query(db.ctx, 
+		`SELECT * from news 
+		WHERE title ILIKE ($1)  
+		ORDER BY pubtime DESC 
+		OFFSET ($2) LIMIT ($3);`,
+		str, (p-1)*obj.PostsPerPage, obj.PostsPerPage)
 
 	if err != nil {
 		return nil, err

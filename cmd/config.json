@@ -3,7 +3,14 @@
         "http://www.kommersant.ru/RSS/news.xml",
         "https://habr.com/ru/rss/best/daily/?fl=ru", 
         "https://tass.ru/rss/v2.xml", 
-        "http://www.polit.ru/rss/index.xml" 
+        "http://www.polit.ru/rss/index.xml", 
+        "http://www.mk.ru/rss/culture/index.xml",
+        "https://news.mail.ru/rss/incident/91/",
+        "http://gadgets.ndtv.com/rss/social/reviews",
+        "http://lenta.ru/rss/articles",
+        "https://7days.ru/rss/all/",
+        "https://news.mail.ru/rss/economics/91/",
+        "http://news.rambler.ru/rss/world/"
     ],
     "request_period": 5
  }
