@@ -4,6 +4,8 @@ import (
 	"NewsAgg/pkg/db/obj"
 	"context"
 	"encoding/json"
+	"log"
+	"time"
 
 	"math/rand"
 
@@ -46,6 +48,7 @@ func (api *API) endpoints() {
 	//заголовок ответа
 	api.r.Use(api.HeadersMiddleware)
 	api.r.Use(api.RequestIDMiddleware)
+	api.r.Use(api.LoggingMiddleware)
 }
 
 // HeadersMiddleware устанавливает заголовки ответа сервера.
@@ -79,6 +82,28 @@ func (api *API) RequestIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+//структура и метод для логгирования http кода ответа
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+func (c *loggingResponseWriter) WriteHeader(statusCode int) {
+	c.statusCode = statusCode
+	c.ResponseWriter.WriteHeader(statusCode)
+}
+
+//миддлваре для логгирования ответов
+func (api *API) LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						
+		logWR:=&loggingResponseWriter{ResponseWriter: w}
+		// Call the next handler in the chain with custom ResponseWriter that saves http code
+		next.ServeHTTP(logWR, r)
+		// After the request handler is called
+		log.Printf("at %v from %v request id %v was proccesed with http-code %v", time.Now(), r.RemoteAddr, r.Context().Value(contextKey("requestID")), logWR.statusCode)
+	})
+}
+
 // posts возвращает n новейших новостей в зависимости от параметра пути n
 func (api *API) posts(w http.ResponseWriter, r *http.Request) {
 	// Считывание параметра {n} из пути запроса.
@@ -100,7 +125,7 @@ func (api *API) posts(w http.ResponseWriter, r *http.Request) {
 		Posts     []obj.Post
 		RequestID any
 	}{
-		Posts:       posts,
+		Posts:     posts,
 		RequestID: r.Context().Value(contextKey("requestID")),
 	}
 
@@ -131,10 +156,10 @@ func (api *API) postWithFilters(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var ans = struct {
-			Post obj.Post
+			Post      obj.Post
 			RequestID any
 		}{
-			Post:    post,
+			Post:      post,
 			RequestID: r.Context().Value(contextKey("requestID")),
 		}
 
