@@ -2,7 +2,10 @@ package api
 
 import (
 	"NewsAgg/pkg/db/obj"
+	"context"
 	"encoding/json"
+
+	"math/rand"
 
 	"net/http"
 	"strconv"
@@ -15,6 +18,8 @@ type API struct {
 	r  *mux.Router // маршрутизатор запросов
 	db obj.DB      // база данных
 }
+
+type contextKey string
 
 // Конструктор API.
 func New(db obj.DB) *API {
@@ -40,6 +45,7 @@ func (api *API) endpoints() {
 	api.r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./webapp"))))
 	//заголовок ответа
 	api.r.Use(api.HeadersMiddleware)
+	api.r.Use(api.RequestIDMiddleware)
 }
 
 // HeadersMiddleware устанавливает заголовки ответа сервера.
@@ -47,6 +53,29 @@ func (api *API) HeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
+	})
+}
+
+// RequestIDMiddleware читает из запроса requestID или генерирует его и записывает в контекст
+func (api *API) RequestIDMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		idParam := r.URL.Query().Get("requestID")
+		var id int
+		var err error
+		if idParam != "" {
+			id, err = strconv.Atoi(idParam)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		} else {
+			id = 1000000 + rand.Intn(10000000)
+		}
+
+		ctx := context.WithValue(r.Context(), contextKey("requestID"), id)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -66,20 +95,29 @@ func (api *API) posts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	a := struct {
+		Posts     []obj.Post
+		RequestID any
+	}{
+		Posts:       posts,
+		RequestID: r.Context().Value(contextKey("requestID")),
+	}
+
 	// Отправка данных клиенту в формате JSON.
-	json.NewEncoder(w).Encode(posts)
+	json.NewEncoder(w).Encode(a)
 	// Отправка клиенту статуса успешного выполнения запроса
 	w.WriteHeader(http.StatusOK)
 }
 
 // postByID возвращает пост по postID
 // при указании параметра search возвращает посты по вхождению строки в заголовке
-// page - номер возвращаемой страницы 
+// page - номер возвращаемой страницы
 func (api *API) postWithFilters(w http.ResponseWriter, r *http.Request) {
-	
+
 	// Считывание параметра  строки запроса.
 	idParam := r.URL.Query().Get("postID")
-	if idParam!=""{
+	if idParam != "" {
 		id, err := strconv.Atoi(idParam)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -91,8 +129,17 @@ func (api *API) postWithFilters(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		var ans = struct {
+			Post obj.Post
+			RequestID any
+		}{
+			Post:    post,
+			RequestID: r.Context().Value(contextKey("requestID")),
+		}
+
 		// Отправка данных клиенту в формате JSON.
-		json.NewEncoder(w).Encode(post)
+		json.NewEncoder(w).Encode(ans)
 		// Отправка клиенту статуса успешного выполнения запроса
 		w.WriteHeader(http.StatusOK)
 		return
@@ -119,18 +166,25 @@ func (api *API) postWithFilters(w http.ResponseWriter, r *http.Request) {
 	str := r.URL.Query().Get("search")
 
 	// Получение данных из БД.
-	posts, pag, err := api.db.SearchPost(str,page)
+	posts, pag, err := api.db.SearchPost(str, page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	var a = obj.Answer{
-		Posts: posts,
-		Pagination:     *pag,
+		Posts:      posts,
+		Pagination: *pag,
+	}
+
+	var ans = struct {
+		obj.Answer
+		RequestID any
+	}{
+		Answer:    a,
+		RequestID: r.Context().Value(contextKey("requestID")),
 	}
 	// Отправка данных клиенту в формате JSON.
-	json.NewEncoder(w).Encode(a)
+	json.NewEncoder(w).Encode(ans)
 	// Отправка клиенту статуса успешного выполнения запроса
 	w.WriteHeader(http.StatusOK)
 }
-
