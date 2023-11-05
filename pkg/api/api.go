@@ -1,3 +1,4 @@
+//api сервера агрегатора новостей
 package api
 
 import (

@@ -2,7 +2,6 @@ package main
 
 import (
 	"NewsAgg/pkg/api"
-	//"NewsAgg/pkg/db/dbmock"
 	"NewsAgg/pkg/db/postgres"
 	"NewsAgg/pkg/rss"
 	"log"
